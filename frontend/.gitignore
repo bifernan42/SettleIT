@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Generated API client — regenerate with `npm run api:generate`
+src/api/generated/
+
+# Env files — .env is committed (safe defaults only, no secrets)
+.env.local
+.env.*.local
+
+# Editor
+.DS_Store
+*.local
