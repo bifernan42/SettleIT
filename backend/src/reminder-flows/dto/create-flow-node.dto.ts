@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { FlowNodeType } from '@prisma/client';
 
 export class CreateFlowNodeDto {
@@ -12,4 +12,10 @@ export class CreateFlowNodeDto {
     description: 'Node-type-specific configuration (action params, delay duration, condition expression…)',
   })
   settings: Record<string, unknown>;
+
+  @ApiPropertyOptional({ type: Number, example: 100, description: 'Canvas X position (pixels)' })
+  positionX?: number;
+
+  @ApiPropertyOptional({ type: Number, example: 200, description: 'Canvas Y position (pixels)' })
+  positionY?: number;
 }

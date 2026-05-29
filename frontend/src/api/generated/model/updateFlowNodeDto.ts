@@ -14,4 +14,8 @@ export interface UpdateFlowNodeDto {
   type?: UpdateFlowNodeDtoType;
   /** Node-type-specific configuration (action params, delay duration, condition expression…) */
   settings?: UpdateFlowNodeDtoSettings;
+  /** Canvas X position (pixels) */
+  positionX?: number;
+  /** Canvas Y position (pixels) */
+  positionY?: number;
 }

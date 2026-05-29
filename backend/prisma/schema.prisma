@@ -83,10 +83,12 @@ model ReminderFlow {
 }
 
 model FlowNode {
-  id       String       @id @default(cuid())
-  flowId   String
-  type     FlowNodeType
-  settings Json         // node-type-specific config (action params, delay duration, condition expression…)
+  id        String       @id @default(cuid())
+  flowId    String
+  type      FlowNodeType
+  settings  Json         // node-type-specific config (action params, delay duration, condition expression…)
+  positionX Float        @default(0) // canvas X position (pixels) — persisted layout state
+  positionY Float        @default(0) // canvas Y position (pixels) — persisted layout state
 
   flow          ReminderFlow @relation(fields: [flowId], references: [id])
   outgoingEdges FlowEdge[]   @relation("SourceNode")

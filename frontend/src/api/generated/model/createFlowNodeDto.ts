@@ -14,4 +14,8 @@ export interface CreateFlowNodeDto {
   type: CreateFlowNodeDtoType;
   /** Node-type-specific configuration (action params, delay duration, condition expression…) */
   settings: CreateFlowNodeDtoSettings;
+  /** Canvas X position (pixels) */
+  positionX?: number;
+  /** Canvas Y position (pixels) */
+  positionY?: number;
 }
