@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum FlowNodeType {
+  TRIGGER
+  ACTION
+  CONDITION
+  DELAY
+  END
+}
+
+// Branching semantics for edges leaving a CONDITION node.
+// Non-condition edges use DEFAULT.
+enum EdgeConditionType {
+  DEFAULT
+  TRUE_BRANCH
+  FALSE_BRANCH
+}
+
+enum PaymentRequestStatus {
+  PENDING
+  FULFILLED
+}
+
+// ─── Domain ───────────────────────────────────────────────────────────────────
+
+model Patient {
+  id           String  @id @default(cuid())
+  name         String
+  surname      String
+  phoneNumber  String
+  email        String
+  address      String
+  coverageRate Float   // [0.0, 1.0] — share covered by insurance
+
+  examinations PatientExamination[]
+}
+
+model Examination {
+  id       String @id @default(cuid())
+  baseCost Float  // out_of_pocket = baseCost * (1 - patient.coverageRate), computed on demand
+
+  patientExaminations PatientExamination[]
+}
+
+model PatientExamination {
+  id            String   @id @default(cuid())
+  patientId     String
+  examinationId String
+  date          DateTime // ISO-8601
+
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  examination Examination @relation(fields: [examinationId], references: [id])
+
+  paymentRequests PaymentRequest[]
+
+  @@index([patientId])
+  @@index([examinationId])
+}
+
+// ─── Flow ─────────────────────────────────────────────────────────────────────
+
+model ReminderFlow {
+  id   String @id @default(cuid())
+  name String
+
+  nodes FlowNode[]
+}
+
+model FlowNode {
+  id       String       @id @default(cuid())
+  flowId   String
+  type     FlowNodeType
+  settings Json         // node-type-specific config (action params, delay duration, condition expression…)
+
+  flow          ReminderFlow @relation(fields: [flowId], references: [id])
+  outgoingEdges FlowEdge[]   @relation("SourceNode")
+  incomingEdges FlowEdge[]   @relation("TargetNode")
+
+  paymentRequests PaymentRequest[]
+
+  @@index([flowId])
+}
+
+model FlowEdge {
+  id            String            @id @default(cuid())
+  sourceNodeId  String
+  targetNodeId  String
+  conditionType EdgeConditionType @default(DEFAULT) // branch selector; condition params live in source CONDITION node's settings
+
+  sourceNode FlowNode @relation("SourceNode", fields: [sourceNodeId], references: [id])
+  targetNode FlowNode @relation("TargetNode", fields: [targetNodeId], references: [id])
+
+  @@index([sourceNodeId])
+  @@index([targetNodeId])
+}
+
+// ─── Payment ──────────────────────────────────────────────────────────────────
+
+model PaymentRequest {
+  id                   String               @id @default(cuid())
+  patientExaminationId String
+  flowNodeId           String               // ACTION node that generated this request
+  date                 DateTime             // ISO-8601
+  status               PaymentRequestStatus @default(PENDING)
+
+  patientExamination PatientExamination @relation(fields: [patientExaminationId], references: [id])
+  flowNode           FlowNode           @relation(fields: [flowNodeId], references: [id])
+
+  @@index([patientExaminationId])
+  @@index([flowNodeId])
+  @@index([status])
+}
