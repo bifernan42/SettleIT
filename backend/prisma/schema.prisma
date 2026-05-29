@@ -25,9 +25,13 @@ enum EdgeConditionType {
   FALSE_BRANCH
 }
 
+// PENDING        — reminder was dispatched; awaiting external payment confirmation
+// FULFILLED      — payment confirmed externally; this reminder cycle is closed
+// DELIVERY_FAILED — the channel (email/SMS) could not reach the patient; no payment expected
 enum PaymentRequestStatus {
   PENDING
   FULFILLED
+  DELIVERY_FAILED
 }
 
 // ─── Domain ───────────────────────────────────────────────────────────────────
@@ -68,9 +72,12 @@ model PatientExamination {
 
 // ─── Flow ─────────────────────────────────────────────────────────────────────
 
+// Only one flow should have isActive = true at a time.
+// POST /patient-examinations will consult this flag to select the flow to run.
 model ReminderFlow {
-  id   String @id @default(cuid())
-  name String
+  id       String  @id @default(cuid())
+  name     String
+  isActive Boolean @default(false) // the flow that fires when a new PatientExamination is registered
 
   nodes FlowNode[]
 }

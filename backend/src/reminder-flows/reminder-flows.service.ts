@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReminderFlowDto } from './dto/create-reminder-flow.dto';
@@ -62,7 +62,25 @@ export class ReminderFlowsService {
 
   // ─── Edges ───────────────────────────────────────────────────────────────
 
-  createEdge(flowId: string, dto: CreateFlowEdgeDto) {
+  async createEdge(flowId: string, dto: CreateFlowEdgeDto) {
+    // Guard: both nodes must belong to this flow, otherwise we'd silently
+    // create a cross-flow edge which would corrupt the graph.
+    const [source, target] = await Promise.all([
+      this.prisma.flowNode.findUnique({ where: { id: dto.sourceNodeId } }),
+      this.prisma.flowNode.findUnique({ where: { id: dto.targetNodeId } }),
+    ]);
+
+    if (!source || source.flowId !== flowId) {
+      throw new BadRequestException(
+        `sourceNodeId "${dto.sourceNodeId}" does not belong to flow "${flowId}".`,
+      );
+    }
+    if (!target || target.flowId !== flowId) {
+      throw new BadRequestException(
+        `targetNodeId "${dto.targetNodeId}" does not belong to flow "${flowId}".`,
+      );
+    }
+
     return this.prisma.flowEdge.create({ data: dto });
   }
 

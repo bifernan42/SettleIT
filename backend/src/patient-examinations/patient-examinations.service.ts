@@ -14,10 +14,16 @@ export class PatientExaminationsService {
     });
   }
 
-  findAll() {
-    return this.prisma.patientExamination.findMany({
+  async findAll() {
+    const records = await this.prisma.patientExamination.findMany({
       include: { patient: true, examination: true },
     });
+    // Compute outOfPocketCost consistently with findOne — never store it,
+    // always derive it so changes to coverageRate are immediately reflected.
+    return records.map((pe) => ({
+      ...pe,
+      outOfPocketCost: pe.examination.baseCost * (1 - pe.patient.coverageRate),
+    }));
   }
 
   async findOne(id: string) {

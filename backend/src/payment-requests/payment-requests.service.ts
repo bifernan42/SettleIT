@@ -20,7 +20,17 @@ export class PaymentRequestsService {
     });
   }
 
-  fulfill(id: string) {
+  async fulfill(id: string) {
+    // Read-then-write to make this a true no-op when the request is already
+    // fulfilled, rather than issuing an unnecessary UPDATE every call.
+    const current = await this.prisma.paymentRequest.findUniqueOrThrow({
+      where: { id },
+    });
+
+    if (current.status === PaymentRequestStatus.FULFILLED) {
+      return current; // already settled — nothing to do
+    }
+
     return this.prisma.paymentRequest.update({
       where: { id },
       data: { status: PaymentRequestStatus.FULFILLED },

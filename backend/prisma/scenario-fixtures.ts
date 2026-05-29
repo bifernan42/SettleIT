@@ -166,10 +166,11 @@ async function upsertFlowEdge(
 export async function createEmailToSmsFallbackFlow(prisma: PrismaClient) {
   const flow = await prisma.reminderFlow.upsert({
     where: { id: ids.flows.emailToSmsFallback },
-    update: { name: 'Email puis SMS si absence de reponse' },
+    update: { name: 'Email puis SMS si absence de reponse', isActive: true },
     create: {
       id: ids.flows.emailToSmsFallback,
       name: 'Email puis SMS si absence de reponse',
+      isActive: true, // this is the default active flow in the seed
     },
   });
 
@@ -355,7 +356,18 @@ async function upsertPatientExamination(
   });
 }
 
-export async function createFulfilledPaymentScenario(
+/**
+ * Scenario A — reminder sent, payment confirmed.
+ *
+ * An email reminder was dispatched (emailAction node). The patient paid
+ * via an external channel (bank transfer, front desk, etc.). SettleIT is
+ * notified by marking the PaymentRequest FULFILLED through
+ * PATCH /payment-requests/:id/fulfill.
+ *
+ * SettleIT does NOT process the payment itself — it only records that
+ * the debt has been settled externally.
+ */
+export async function createReminderSentAndSettledScenario(
   prisma: PrismaClient,
   patient: Patient,
   examination: Examination,
@@ -386,7 +398,14 @@ export async function createFulfilledPaymentScenario(
   });
 }
 
-export async function createPendingPaymentScenario(
+/**
+ * Scenario B — reminder sent, awaiting payment.
+ *
+ * An SMS reminder was dispatched (smsAction node) and reached the patient.
+ * No external payment confirmation has arrived yet. The flow engine will
+ * re-check this request's status once the configured DELAY elapses.
+ */
+export async function createReminderSentAwaitingPaymentScenario(
   prisma: PrismaClient,
   patient: Patient,
   examination: Examination,
@@ -417,7 +436,18 @@ export async function createPendingPaymentScenario(
   });
 }
 
-export async function createFailedPaymentScenario(
+/**
+ * Scenario C — reminder delivery failed.
+ *
+ * The SMS fallback (smsFallbackAction node) could not reach the patient —
+ * invalid number, carrier rejection, etc. The status is DELIVERY_FAILED,
+ * which is distinct from PENDING: the reminder was never received, so the
+ * patient cannot be expected to pay from this notification. A human review
+ * or an alternate contact strategy is required.
+ *
+ * This is NOT a failed payment. SettleIT never processes payments.
+ */
+export async function createDeliveryFailedReminderScenario(
   prisma: PrismaClient,
   patient: Patient,
   examination: Examination,
@@ -436,14 +466,14 @@ export async function createFailedPaymentScenario(
       patientExaminationId: patientExamination.id,
       flowNodeId: ids.nodes.smsFallbackAction,
       date: new Date('2026-05-18T09:15:00.000Z'),
-      status: PaymentRequestStatus.PENDING,
+      status: PaymentRequestStatus.DELIVERY_FAILED,
     },
     create: {
       id: ids.paymentRequests.failed,
       patientExaminationId: patientExamination.id,
       flowNodeId: ids.nodes.smsFallbackAction,
       date: new Date('2026-05-18T09:15:00.000Z'),
-      status: PaymentRequestStatus.PENDING,
+      status: PaymentRequestStatus.DELIVERY_FAILED,
     },
   });
 }

@@ -11,12 +11,18 @@ export class PatientExaminationsController {
 
   @Post()
   @ApiOperation({
-    summary: 'Register a patient examination — triggers the reminder flow',
-    description: 'Creating a record here is the event that activates the configured reminder flow.',
+    summary: 'Register a patient examination',
+    description:
+      'Persists the examination record. This is the intended trigger point for the ' +
+      'reminder flow engine (not yet implemented): once the engine exists, registering ' +
+      'a PatientExamination here will automatically launch the active ReminderFlow.',
   })
-  @ApiResponse({ status: 201, description: 'PatientExamination created and flow triggered' })
+  @ApiResponse({ status: 201, description: 'PatientExamination created' })
   create(@Body() dto: CreatePatientExaminationDto) {
     return this.service.create(dto);
+    // TODO: emit a domain event here once the flow engine is implemented.
+    // The active ReminderFlow (isActive = true) should be resolved and its
+    // TRIGGER node executed, which will produce the first PaymentRequest.
   }
 
   @Get()

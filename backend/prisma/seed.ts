@@ -1,13 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import {
+  createDeliveryFailedReminderScenario,
   createEmailToSmsFallbackFlow,
   createExpensiveExamination,
-  createFailedPaymentScenario,
-  createFulfilledPaymentScenario,
   createFullContactPatient,
   createNoEmailPatient,
   createNoPhonePatient,
-  createPendingPaymentScenario,
+  createReminderSentAndSettledScenario,
+  createReminderSentAwaitingPaymentScenario,
   createSmsOnlyFlow,
   createStandardExamination,
 } from './scenario-fixtures';
@@ -25,9 +25,12 @@ async function main() {
   await createEmailToSmsFallbackFlow(prisma);
   await createSmsOnlyFlow(prisma);
 
-  await createFulfilledPaymentScenario(prisma, patientFull, examStandard);
-  await createPendingPaymentScenario(prisma, patientNoEmail, examExpensive);
-  await createFailedPaymentScenario(prisma, patientNoPhone, examExpensive);
+  // Scenario A: email reminder sent → patient settled externally → FULFILLED
+  await createReminderSentAndSettledScenario(prisma, patientFull, examStandard);
+  // Scenario B: SMS reminder sent → still awaiting external payment → PENDING
+  await createReminderSentAwaitingPaymentScenario(prisma, patientNoEmail, examExpensive);
+  // Scenario C: SMS fallback could not reach patient → DELIVERY_FAILED
+  await createDeliveryFailedReminderScenario(prisma, patientNoPhone, examExpensive);
 }
 
 main()
