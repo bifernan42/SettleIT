@@ -1,5 +1,7 @@
 # SettleIT — agent context
 
+Documentation updated by Codex (GPT-5) on 2026-05-29 19:07:40 CEST.
+
 Read this file before exploring the codebase. It covers everything needed to navigate, extend, or debug the project without re-deriving context from scratch.
 
 ## What this project is
@@ -19,7 +21,9 @@ A backend for medical practitioners to collect payments faster. The core idea: w
 SettleIT/
 └── backend/
     ├── prisma/
-    │   └── schema.prisma          # single source of truth for the data model
+    │   ├── schema.prisma          # single source of truth for the data model
+    │   ├── seed.ts                # deterministic seed orchestrator
+    │   └── scenario-fixtures.ts   # named business fixture helpers
     ├── src/
     │   ├── main.ts                # bootstrap + SwaggerModule setup
     │   ├── app.module.ts          # root module, imports all feature modules
@@ -35,6 +39,7 @@ SettleIT/
 ```
 
 Each feature module follows the same layout:
+
 ```
 <feature>/
   dto/
@@ -80,9 +85,16 @@ PaymentRequestStatus  PENDING | FULFILLED
 
 **Flow nodes and edges share `ReminderFlowsService`.** `FlowNodesController` and `FlowEdgesController` are separate controllers registered in `ReminderFlowsModule` but delegate entirely to `ReminderFlowsService`.
 
+**Seed data is deterministic and idempotent.** `prisma/scenario-fixtures.ts` uses `faker.seed(42)` plus stable IDs and Prisma `upsert()` calls. The seed command is configured in `prisma.config.ts` under `migrations.seed`; run it with `npm run prisma:seed` after the database schema exists.
+
+**"Missing" patient contact fields are empty strings today.** `Patient.email` and `Patient.phoneNumber` are required strings in the schema, so fixtures for no-email or no-phone patients use `''` rather than `null`.
+
+**There is no `FAILED` payment status yet.** `PaymentRequestStatus` currently supports only `PENDING` and `FULFILLED`; the failed-delivery seed scenario is represented by a pending request attached to the SMS fallback action node.
+
 ## API surface
 
 ### patients
+
 ```
 POST   /patients
 GET    /patients
@@ -92,6 +104,7 @@ DELETE /patients/:id
 ```
 
 ### examinations
+
 ```
 POST   /examinations
 GET    /examinations
@@ -101,6 +114,7 @@ DELETE /examinations/:id
 ```
 
 ### patient-examinations
+
 ```
 POST   /patient-examinations          ← flow trigger
 GET    /patient-examinations
@@ -110,6 +124,7 @@ DELETE /patient-examinations/:id
 ```
 
 ### reminder-flows (flows + nested node/edge management)
+
 ```
 POST   /reminder-flows
 GET    /reminder-flows
@@ -129,6 +144,7 @@ DELETE /flow-edges/:edgeId
 ```
 
 ### payment-requests
+
 ```
 GET    /payment-requests?status=PENDING|FULFILLED
 GET    /payment-requests/:id
@@ -142,9 +158,21 @@ See `docs/commands.md` for the full reference. Short version:
 ```bash
 npm run start:dev      # dev server with watch (Swagger at http://localhost:3000/api)
 npm run prisma:migrate # apply DB migrations
+npm run prisma:push    # sync local SQLite schema without creating a migration
+npm run prisma:seed    # load deterministic business fixtures
 npm run prisma:studio  # visual DB browser
 npm run build          # compile to dist/
 npm run test           # unit tests
+```
+
+For local fixture validation:
+
+```bash
+npm run prisma:push
+npm run prisma:seed
+npm run prisma:seed    # idempotence check
+npm run build
+npm run test
 ```
 
 ## Conventions
