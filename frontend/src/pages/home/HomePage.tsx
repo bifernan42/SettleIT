@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePatientExaminationsControllerFindAll } from '@/api/generated/patient-examinations/patient-examinations';
 import { usePaymentRequestsControllerFindAll } from '@/api/generated/payment-requests/payment-requests';
 import { useReminderFlowsControllerFindAll } from '@/api/generated/reminder-flows/reminder-flows';
+import { FlowMiniPreview } from '@/pages/flows/FlowMiniPreview';
 
 // ─── Stat card ───────────────────────────────────────────────────────────────
 
@@ -101,23 +102,28 @@ export default function HomePage() {
 
       {/* Workflow actif */}
       {activeFlow ? (
-        <div className="flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 px-4 py-3">
-          <span className="text-xl">🔀</span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-green-800">
-              Workflow actif : <span className="font-bold">« {activeFlow.name} »</span>
-            </p>
-            <p className="text-xs text-green-700 mt-0.5">
-              Ce workflow sera utilisé pour les prochaines campagnes de relance.
-            </p>
+        <section>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Workflow actif
+          </h2>
+          <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+            <FlowMiniPreview flowId={activeFlow.id} />
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <div>
+                <p className="text-sm font-semibold">{activeFlow.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Ce workflow sera déclenché pour les prochaines campagnes de relance.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate(`/flows/${activeFlow.id}`)}
+                className="text-xs font-medium text-primary hover:underline underline-offset-2 shrink-0 ml-4"
+              >
+                Ouvrir l'éditeur →
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => navigate(`/flows/${activeFlow.id}`)}
-            className="text-xs font-medium text-green-700 hover:text-green-900 underline underline-offset-2"
-          >
-            Modifier →
-          </button>
-        </div>
+        </section>
       ) : (
         <div className="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
           <span className="text-xl">⚠️</span>

@@ -76,6 +76,17 @@ TypeScript will immediately surface any component that relied on a type that cha
 
 The flow editor is **production-ready**. All major UX gaps from the first agent have been addressed.
 
+### Flow editor mis en avant — visual grammar (2026-05-31)
+
+**Nouveaux fichiers :**
+- `src/pages/flows/FlowMiniPreview.tsx` — composant `<FlowMiniPreview flowId={id}>` : `ReactFlowProvider` + canvas ReactFlow en lecture seule (`nodesDraggable/nodesConnectable/panOnDrag/zoomOnScroll` tous à false, `pointer-events-none`, `fitView`). Réutilise `nodeTypes`/`edgeTypes` existants + `toRFNode`/`toRFEdge` inlinés. Aucune modification du flow editor.
+
+**Fichiers modifiés :**
+- `src/pages/flows/FlowsPage.tsx` — DataTable remplacée par une grille de cartes (`grid-cols-1/2/3`). Chaque carte affiche la miniature ReactFlow du graphe réel + nom + badge actif/inactif + boutons Éditer/Supprimer. Dialogs create/delete inchangés.
+- `src/pages/home/HomePage.tsx` — Bandeau texte "workflow actif" remplacé par une carte avec `<FlowMiniPreview>` + lien "Ouvrir l'éditeur →". Le flow est visible dès l'accueil.
+- `src/index.css` — `--primary` passé de near-black (`oklch(0.205 0 0)`) à bleu médical (`oklch(0.52 0.2 244)`). Impacte automatiquement boutons, nav active states, focus rings.
+- `src/components/layout/AppShell.tsx` — Emojis remplacés par icônes `lucide-react` (Home, GitBranch, CalendarDays, Users, CreditCard, Send, BarChart2, Settings). Logo "SettleIT" avec icône `Activity` bleue.
+
 ### UI/UX Overhaul — produit vs CRUD (2026-05-31)
 
 **Nouvelles pages créées :**

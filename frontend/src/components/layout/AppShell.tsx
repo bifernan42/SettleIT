@@ -1,21 +1,42 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import {
+  Activity,
+  BarChart2,
+  CalendarDays,
+  CreditCard,
+  GitBranch,
+  Home,
+  Send,
+  Settings,
+  Users,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const mainNav = [
-  { to: '/', label: 'Accueil', emoji: '🏠', end: true },
-  { to: '/flows', label: 'Workflows', emoji: '🔀' },
-  { to: '/visites', label: 'Visites', emoji: '🗓️' },
-  { to: '/patients', label: 'Patients', emoji: '👥' },
-  { to: '/relances', label: 'Relances', emoji: '💳' },
-  { to: '/campagne', label: 'Campagne', emoji: '📤' },
-  { to: '/analytics', label: 'Analytics', emoji: '📊' },
+  { to: '/', label: 'Accueil', icon: Home, end: true },
+  { to: '/flows', label: 'Workflows', icon: GitBranch },
+  { to: '/visites', label: 'Visites', icon: CalendarDays },
+  { to: '/patients', label: 'Patients', icon: Users },
+  { to: '/relances', label: 'Relances', icon: CreditCard },
+  { to: '/campagne', label: 'Campagne', icon: Send },
+  { to: '/analytics', label: 'Analytics', icon: BarChart2 },
 ];
 
 const bottomNav = [
-  { to: '/reglages', label: 'Réglages', emoji: '⚙️' },
+  { to: '/reglages', label: 'Réglages', icon: Settings },
 ];
 
-function NavItem({ to, label, emoji, end }: { to: string; label: string; emoji: string; end?: boolean }) {
+function NavItem({
+  to,
+  label,
+  icon: Icon,
+  end,
+}: {
+  to: string;
+  label: string;
+  icon: React.ElementType;
+  end?: boolean;
+}) {
   return (
     <NavLink
       to={to}
@@ -29,7 +50,7 @@ function NavItem({ to, label, emoji, end }: { to: string; label: string; emoji: 
         )
       }
     >
-      <span className="text-base leading-none">{emoji}</span>
+      <Icon size={16} strokeWidth={1.75} />
       <span>{label}</span>
     </NavLink>
   );
@@ -39,10 +60,13 @@ export default function AppShell() {
   return (
     <div className="flex h-screen bg-background">
       <aside className="w-56 shrink-0 border-r flex flex-col py-5 px-3">
-        {/* Logo / titre */}
-        <div className="px-3 mb-6">
-          <p className="font-bold text-base tracking-tight text-foreground">SettleIT</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Gestion des relances patients</p>
+        {/* Logo */}
+        <div className="flex items-center gap-2 px-3 mb-6">
+          <Activity size={18} strokeWidth={2} className="text-primary shrink-0" />
+          <div>
+            <p className="font-bold text-base tracking-tight text-foreground leading-none">SettleIT</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Relances patients</p>
+          </div>
         </div>
 
         {/* Nav principale */}

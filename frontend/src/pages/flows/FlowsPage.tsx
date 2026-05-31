@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { type ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DataTable } from '@/components/shared/DataTable';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import PageHeader from '@/components/layout/PageHeader';
 import { useForm } from 'react-hook-form';
@@ -16,6 +14,7 @@ import {
   useReminderFlowsControllerFindAll,
   useReminderFlowsControllerRemove,
 } from '@/api/generated/reminder-flows/reminder-flows';
+import { FlowMiniPreview } from './FlowMiniPreview';
 
 type FlowRow = { id: string; name: string; isActive: boolean };
 
@@ -35,52 +34,10 @@ export default function FlowsPage() {
 
   const rows = (data as FlowRow[] | undefined) ?? [];
 
-  const columns: ColumnDef<FlowRow>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Nom du workflow',
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.name}</span>
-      ),
-    },
-    {
-      accessorKey: 'isActive',
-      header: 'Statut',
-      cell: ({ row }) =>
-        row.original.isActive ? (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
-            ✅ Actif
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-500">
-            Inactif
-          </span>
-        ),
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => (
-        <div className="flex gap-2 justify-end">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => navigate(`/flows/${row.original.id}`)}
-          >
-            ✏️ Éditer
-          </Button>
-          <Button size="sm" variant="destructive" onClick={() => setDeleting(row.original)}>
-            Supprimer
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <>
       <PageHeader
-        title="🔀 Workflows de relance"
+        title="Workflows de relance"
         action={
           <Button
             onClick={() => {
@@ -92,7 +49,61 @@ export default function FlowsPage() {
           </Button>
         }
       />
-      <DataTable columns={columns} data={rows} isLoading={isLoading} />
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border bg-card shadow-sm overflow-hidden animate-pulse">
+              <div className="h-44 bg-muted/40" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 w-32 bg-muted rounded" />
+                <div className="h-3 w-16 bg-muted rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-muted-foreground text-sm">Aucun workflow créé.</p>
+          <Button className="mt-4" onClick={() => { reset(); setFormOpen(true); }}>
+            + Créer un workflow
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {rows.map((flow) => (
+            <div
+              key={flow.id}
+              className="rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow"
+            >
+              <FlowMiniPreview flowId={flow.id} />
+
+              <div className="flex items-center justify-between px-4 py-3 border-t">
+                <div>
+                  <p className="font-semibold text-sm">{flow.name}</p>
+                  {flow.isActive ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800 mt-1">
+                      ● Actif
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground mt-1">
+                      Inactif
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => navigate(`/flows/${flow.id}`)}>
+                    Éditer
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => setDeleting(flow)}>
+                    Supprimer
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
