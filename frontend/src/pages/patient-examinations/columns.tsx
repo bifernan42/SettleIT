@@ -5,7 +5,7 @@ export type PatientExaminationRow = {
   id: string;
   date: string;
   outOfPocketCost: number;
-  patient: { name: string; surname: string };
+  patient: { id: string; name: string; surname: string };
   examination: { id: string; baseCost: number };
 };
 
@@ -16,24 +16,37 @@ export function buildColumns(
   return [
     {
       header: 'Patient',
-      cell: ({ row }) => `${row.original.patient.surname}, ${row.original.patient.name}`,
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.original.patient.surname} {row.original.patient.name}
+        </span>
+      ),
     },
     {
-      header: 'Examination',
+      header: 'Examen',
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-muted-foreground">{row.original.examination.id.slice(0, 8)}</span>
+        <span className="text-sm text-muted-foreground">
+          {row.original.examination.baseCost.toFixed(2)} € base
+        </span>
       ),
     },
     {
       accessorKey: 'date',
       header: 'Date',
-      cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
+      cell: ({ row }) =>
+        new Date(row.original.date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+        }),
     },
     {
       accessorKey: 'outOfPocketCost',
-      header: 'Out-of-pocket',
+      header: 'Reste à charge',
       cell: ({ row }) => (
-        <span className="font-medium">€{row.original.outOfPocketCost.toFixed(2)}</span>
+        <span className="font-semibold text-amber-700">
+          {row.original.outOfPocketCost.toFixed(2)} €
+        </span>
       ),
     },
     {
@@ -41,8 +54,12 @@ export function buildColumns(
       header: '',
       cell: ({ row }) => (
         <div className="flex gap-2 justify-end">
-          <Button size="sm" variant="outline" onClick={() => onEdit(row.original)}>Edit</Button>
-          <Button size="sm" variant="destructive" onClick={() => onDelete(row.original)}>Delete</Button>
+          <Button size="sm" variant="outline" onClick={() => onEdit(row.original)}>
+            Modifier
+          </Button>
+          <Button size="sm" variant="destructive" onClick={() => onDelete(row.original)}>
+            Supprimer
+          </Button>
         </div>
       ),
     },

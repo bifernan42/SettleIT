@@ -10,23 +10,29 @@ export function buildColumns(
   return [
     {
       accessorKey: 'id',
-      header: 'ID',
+      header: 'Identifiant',
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-muted-foreground">{row.original.id.slice(0, 8)}</span>
+        <span className="font-mono text-xs text-muted-foreground">{row.original.id.slice(0, 12)}</span>
       ),
     },
     {
       accessorKey: 'baseCost',
-      header: 'Base cost',
-      cell: ({ row }) => `€${row.original.baseCost.toFixed(2)}`,
+      header: 'Coût de base',
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.baseCost.toFixed(2)} €</span>
+      ),
     },
     {
       id: 'actions',
       header: '',
       cell: ({ row }) => (
         <div className="flex gap-2 justify-end">
-          <Button size="sm" variant="outline" onClick={() => onEdit(row.original)}>Edit</Button>
-          <Button size="sm" variant="destructive" onClick={() => onDelete(row.original)}>Delete</Button>
+          <Button size="sm" variant="outline" onClick={() => onEdit(row.original)}>
+            Modifier
+          </Button>
+          <Button size="sm" variant="destructive" onClick={() => onDelete(row.original)}>
+            Supprimer
+          </Button>
         </div>
       ),
     },

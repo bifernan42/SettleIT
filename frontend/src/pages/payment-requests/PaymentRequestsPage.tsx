@@ -11,10 +11,10 @@ import {
 import { buildColumns, type PaymentRequestRow } from './columns';
 
 const STATUS_TABS = [
-  { label: 'All', value: undefined },
-  { label: 'Pending', value: 'PENDING' },
-  { label: 'Fulfilled', value: 'FULFILLED' },
-  { label: 'Failed', value: 'DELIVERY_FAILED' },
+  { label: 'Toutes', value: undefined },
+  { label: '⏳ En attente', value: 'PENDING' },
+  { label: '✅ Réglées', value: 'FULFILLED' },
+  { label: '❌ Échecs', value: 'DELIVERY_FAILED' },
 ] as const;
 
 type StatusFilter = (typeof STATUS_TABS)[number]['value'];
@@ -38,7 +38,7 @@ export default function PaymentRequestsPage() {
 
   return (
     <>
-      <PageHeader title="Payment requests" />
+      <PageHeader title="💳 Relances de paiement" />
 
       <div className="flex gap-2 mb-4">
         {STATUS_TABS.map(({ label, value }) => (

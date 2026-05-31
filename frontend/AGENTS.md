@@ -76,6 +76,32 @@ TypeScript will immediately surface any component that relied on a type that cha
 
 The flow editor is **production-ready**. All major UX gaps from the first agent have been addressed.
 
+### UI/UX Overhaul — produit vs CRUD (2026-05-31)
+
+**Nouvelles pages créées :**
+- `src/pages/home/HomePage.tsx` — Dashboard : stats (visites, relances PENDING/FULFILLED/FAILED), widget workflow actif, 4 quick-action cards.
+- `src/pages/campagne/CampagnePage.tsx` — Sélection workflow + checklist patients → toast de confirmation (campagne simulée, flow engine non construit).
+- `src/pages/settings/ReglagesPage.tsx` — Examens CRUD déplacé ici, présenté en layout settings propre.
+
+**Navigation restructurée (`AppShell.tsx`) :**
+- Sidebar avec icon emoji + label français pour chaque entrée.
+- Nav principale : Accueil / Visites / Patients / Relances / Campagne.
+- Nav bas : Workflows / Réglages.
+
+**Routes (`App.tsx`) :**
+- `/` → HomePage, `/visites` (was `/patient-examinations`), `/relances` (was `/payment-requests`), `/campagne` (nouveau), `/reglages` (nouveau).
+- Redirects 301 pour les anciennes URLs.
+
+**Traduction française complète :**
+- Tous les libellés, titres de page, boutons, colonnes de table, confirmations de suppression.
+- `ConfirmDialog.tsx` — defaults en français ("Confirmer la suppression" / "Annuler" / "Supprimer").
+- `StatusBadge.tsx` — "⏳ En attente", "✅ Réglé", "❌ Échec d'envoi".
+- `columns.tsx` de chaque page — headers et actions traduits.
+
+**Toast via `sonner` :** installé + `<Toaster>` dans `main.tsx`. Utilisé sur la page Campagne.
+
+---
+
 ### Flow editor — what was added (2026-05-31)
 
 **Files modified:**

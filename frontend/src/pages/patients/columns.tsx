@@ -17,23 +17,31 @@ export function buildColumns(
 ): ColumnDef<PatientRow>[] {
   return [
     {
-      header: 'Name',
-      cell: ({ row }) => `${row.original.surname}, ${row.original.name}`,
+      header: 'Nom',
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.original.surname} {row.original.name}
+        </span>
+      ),
     },
     { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'phoneNumber', header: 'Phone' },
+    { accessorKey: 'phoneNumber', header: 'Téléphone' },
     {
       accessorKey: 'coverageRate',
-      header: 'Coverage',
-      cell: ({ row }) => `${(row.original.coverageRate * 100).toFixed(0)}%`,
+      header: 'Remboursement',
+      cell: ({ row }) => `${(row.original.coverageRate * 100).toFixed(0)} %`,
     },
     {
       id: 'actions',
       header: '',
       cell: ({ row }) => (
         <div className="flex gap-2 justify-end">
-          <Button size="sm" variant="outline" onClick={() => onEdit(row.original)}>Edit</Button>
-          <Button size="sm" variant="destructive" onClick={() => onDelete(row.original)}>Delete</Button>
+          <Button size="sm" variant="outline" onClick={() => onEdit(row.original)}>
+            Modifier
+          </Button>
+          <Button size="sm" variant="destructive" onClick={() => onDelete(row.original)}>
+            Supprimer
+          </Button>
         </div>
       ),
     },

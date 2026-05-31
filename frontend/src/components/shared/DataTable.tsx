@@ -40,13 +40,13 @@ export function DataTable<T>({ columns, data, isLoading }: DataTableProps<T>) {
           {isLoading ? (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                Loading…
+                Chargement…
               </TableCell>
             </TableRow>
           ) : table.getRowModel().rows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                No results.
+                Aucun résultat.
               </TableCell>
             </TableRow>
           ) : (

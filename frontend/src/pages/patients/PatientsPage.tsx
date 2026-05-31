@@ -17,7 +17,8 @@ import { buildColumns, type PatientRow } from './columns';
 
 export default function PatientsPage() {
   const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: getPatientsControllerFindAllQueryKey() });
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: getPatientsControllerFindAllQueryKey() });
 
   const { data, isLoading } = usePatientsControllerFindAll();
   const create = usePatientsControllerCreate({ mutation: { onSuccess: invalidate } });
@@ -28,8 +29,14 @@ export default function PatientsPage() {
   const [editing, setEditing] = useState<PatientRow | null>(null);
   const [deleting, setDeleting] = useState<PatientRow | null>(null);
 
-  const openCreate = () => { setEditing(null); setFormOpen(true); };
-  const openEdit = (row: PatientRow) => { setEditing(row); setFormOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setFormOpen(true);
+  };
+  const openEdit = (row: PatientRow) => {
+    setEditing(row);
+    setFormOpen(true);
+  };
 
   const handleSubmit = (values: Omit<PatientRow, 'id'>) => {
     if (editing) {
@@ -45,15 +52,15 @@ export default function PatientsPage() {
   return (
     <>
       <PageHeader
-        title="Patients"
-        action={<Button onClick={openCreate}>New patient</Button>}
+        title="👥 Patients"
+        action={<Button onClick={openCreate}>+ Nouveau patient</Button>}
       />
       <DataTable columns={columns} data={rows} isLoading={isLoading} />
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit patient' : 'New patient'}</DialogTitle>
+            <DialogTitle>{editing ? 'Modifier le patient' : 'Nouveau patient'}</DialogTitle>
           </DialogHeader>
           <PatientForm
             defaultValues={editing ?? undefined}
@@ -66,9 +73,13 @@ export default function PatientsPage() {
       <ConfirmDialog
         open={!!deleting}
         onOpenChange={(open) => !open && setDeleting(null)}
-        onConfirm={() => deleting && remove.mutate({ id: deleting.id }, { onSuccess: () => setDeleting(null) })}
+        onConfirm={() =>
+          deleting &&
+          remove.mutate({ id: deleting.id }, { onSuccess: () => setDeleting(null) })
+        }
         loading={remove.isPending}
-        description="This will permanently delete the patient."
+        title="Supprimer ce patient ?"
+        description="Cette action est irréversible. Les visites associées à ce patient seront également supprimées."
       />
     </>
   );

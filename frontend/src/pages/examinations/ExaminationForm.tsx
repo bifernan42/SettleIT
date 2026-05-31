@@ -19,16 +19,20 @@ export default function ExaminationForm({ defaultValues, onSubmit, loading }: Pr
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-2">
       <div className="grid gap-1.5">
-        <Label>Base cost (€)</Label>
+        <Label>Coût de base (€)</Label>
         <Input
           type="number"
           step="0.01"
           min={0}
+          placeholder="150.00"
           {...register('baseCost', { required: true, valueAsNumber: true })}
         />
+        <p className="text-xs text-muted-foreground">
+          Montant avant application du taux de remboursement patient.
+        </p>
       </div>
       <Button type="submit" disabled={loading} className="mt-2">
-        {loading ? 'Saving…' : 'Save'}
+        {loading ? 'Enregistrement…' : 'Enregistrer'}
       </Button>
     </form>
   );

@@ -20,22 +20,34 @@ export function buildColumns(
       header: 'Patient',
       cell: ({ row }) => {
         const p = row.original.patientExamination.patient;
-        return `${p.surname}, ${p.name}`;
+        return (
+          <span className="font-medium">
+            {p.surname} {p.name}
+          </span>
+        );
       },
     },
     {
-      header: 'Cost',
-      cell: ({ row }) =>
-        `€${row.original.patientExamination.examination.baseCost.toFixed(2)}`,
+      header: 'Montant',
+      cell: ({ row }) => (
+        <span className="font-semibold text-amber-700">
+          {row.original.patientExamination.examination.baseCost.toFixed(2)} €
+        </span>
+      ),
     },
     {
       accessorKey: 'date',
-      header: 'Date',
-      cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
+      header: "Date d'envoi",
+      cell: ({ row }) =>
+        new Date(row.original.date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+        }),
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: 'Statut',
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
@@ -49,7 +61,7 @@ export function buildColumns(
             disabled={row.original.status !== 'PENDING'}
             onClick={() => onFulfill(row.original)}
           >
-            Mark fulfilled
+            ✅ Marquer réglé
           </Button>
         </div>
       ),

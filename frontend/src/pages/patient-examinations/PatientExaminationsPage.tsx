@@ -17,7 +17,8 @@ import { buildColumns, type PatientExaminationRow } from './columns';
 
 export default function PatientExaminationsPage() {
   const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: getPatientExaminationsControllerFindAllQueryKey() });
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: getPatientExaminationsControllerFindAllQueryKey() });
 
   const { data, isLoading } = usePatientExaminationsControllerFindAll();
   const create = usePatientExaminationsControllerCreate({ mutation: { onSuccess: invalidate } });
@@ -28,8 +29,14 @@ export default function PatientExaminationsPage() {
   const [editing, setEditing] = useState<PatientExaminationRow | null>(null);
   const [deleting, setDeleting] = useState<PatientExaminationRow | null>(null);
 
-  const openCreate = () => { setEditing(null); setFormOpen(true); };
-  const openEdit = (row: PatientExaminationRow) => { setEditing(row); setFormOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setFormOpen(true);
+  };
+  const openEdit = (row: PatientExaminationRow) => {
+    setEditing(row);
+    setFormOpen(true);
+  };
 
   const handleSubmit = (values: { patientId: string; examinationId: string; date: string }) => {
     const payload = { ...values, date: new Date(values.date).toISOString() };
@@ -45,22 +52,30 @@ export default function PatientExaminationsPage() {
   return (
     <>
       <PageHeader
-        title="Patient visits"
-        action={<Button onClick={openCreate}>Register visit</Button>}
+        title="🗓️ Visites"
+        action={<Button onClick={openCreate}>+ Enregistrer une visite</Button>}
       />
-      <DataTable columns={buildColumns(openEdit, setDeleting)} data={rows} isLoading={isLoading} />
+      <DataTable
+        columns={buildColumns(openEdit, setDeleting)}
+        data={rows}
+        isLoading={isLoading}
+      />
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit visit' : 'Register visit'}</DialogTitle>
+            <DialogTitle>{editing ? 'Modifier la visite' : 'Enregistrer une visite'}</DialogTitle>
           </DialogHeader>
           <PatientExaminationForm
-            defaultValues={editing ? {
-              patientId: editing.patient as unknown as string,
-              examinationId: editing.examination as unknown as string,
-              date: editing.date.slice(0, 10),
-            } : undefined}
+            defaultValues={
+              editing
+                ? {
+                    patientId: editing.patient.id,
+                    examinationId: editing.examination.id,
+                    date: editing.date.slice(0, 10),
+                  }
+                : undefined
+            }
             onSubmit={handleSubmit}
             loading={create.isPending || update.isPending}
           />
@@ -70,8 +85,13 @@ export default function PatientExaminationsPage() {
       <ConfirmDialog
         open={!!deleting}
         onOpenChange={(open) => !open && setDeleting(null)}
-        onConfirm={() => deleting && remove.mutate({ id: deleting.id }, { onSuccess: () => setDeleting(null) })}
+        onConfirm={() =>
+          deleting &&
+          remove.mutate({ id: deleting.id }, { onSuccess: () => setDeleting(null) })
+        }
         loading={remove.isPending}
+        title="Supprimer cette visite ?"
+        description="Cette action est irréversible."
       />
     </>
   );
