@@ -9,6 +9,7 @@ import { ReminderFlowsModule } from './reminder-flows/reminder-flows.module';
 import { PaymentRequestsModule } from './payment-requests/payment-requests.module';
 import { SettingsModule } from './settings/settings.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
     PaymentRequestsModule,
     SettingsModule,
     CampaignsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
