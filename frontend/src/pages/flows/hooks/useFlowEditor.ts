@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   applyEdgeChanges,
@@ -22,6 +22,11 @@ import {
   useReminderFlowsControllerFindNodes,
 } from '@/api/generated/reminder-flows/reminder-flows';
 import type { CreateFlowNodeDtoType } from '@/api/generated/model';
+
+export const FlowEditorContext = createContext<{
+  deleteNode: (id: string) => void;
+  deleteEdge: (id: string) => void;
+} | null>(null);
 
 // ─── Domain types (shapes the API returns) ──────────────────────────────────
 
@@ -53,11 +58,16 @@ function toRFNode(dn: DomainNode): Node<DomainNode> {
 }
 
 function toRFEdge(de: DomainEdge): Edge {
+  let sourceHandle: string | null = null;
+  if (de.conditionType === 'TRUE_BRANCH') sourceHandle = 'true';
+  else if (de.conditionType === 'FALSE_BRANCH') sourceHandle = 'false';
+
   return {
     id: de.id,
     source: de.sourceNodeId,
     target: de.targetNodeId,
-    label: de.conditionType !== 'DEFAULT' ? de.conditionType : undefined,
+    sourceHandle,
+    type: 'conditionEdge',
     data: de,
   };
 }
@@ -86,10 +96,10 @@ export function useFlowEditor(flowId: string) {
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const patchNode = useFlowNodesControllerUpdate();
-  useFlowNodesControllerRemove(); // available for future delete-node UX
+  const removeNode = useFlowNodesControllerRemove();
   const createNode = useReminderFlowsControllerCreateNode();
   const createEdge = useReminderFlowsControllerCreateEdge();
-  const deleteEdge = useFlowEdgesControllerRemove();
+  const removeEdge = useFlowEdgesControllerRemove();
 
   // ── Selected node (side panel) ────────────────────────────────────────────
   const [selectedNodeData, setSelectedNodeData] = useState<DomainNode | null>(null);
@@ -119,19 +129,23 @@ export function useFlowEditor(flowId: string) {
 
       for (const change of changes) {
         if (change.type === 'remove') {
-          deleteEdge.mutate({ edgeId: change.id });
+          removeEdge.mutate({ edgeId: change.id });
         }
       }
     },
-    [deleteEdge],
+    [removeEdge],
   );
 
   const onConnect: OnConnect = useCallback(
     (connection) => {
+      let conditionType: 'DEFAULT' | 'TRUE_BRANCH' | 'FALSE_BRANCH' = 'DEFAULT';
+      if (connection.sourceHandle === 'true') conditionType = 'TRUE_BRANCH';
+      else if (connection.sourceHandle === 'false') conditionType = 'FALSE_BRANCH';
+
       createEdge.mutate(
         {
           id: flowId,
-          data: { sourceNodeId: connection.source, targetNodeId: connection.target },
+          data: { sourceNodeId: connection.source, targetNodeId: connection.target, conditionType },
         },
         {
           onSuccess: () =>
@@ -182,6 +196,35 @@ export function useFlowEditor(flowId: string) {
     [flowId, patchNode, qc],
   );
 
+  const deleteNode = useCallback(
+    (nodeId: string) => {
+      removeNode.mutate(
+        { nodeId },
+        {
+          onSuccess: () => {
+            qc.invalidateQueries({ queryKey: getReminderFlowsControllerFindNodesQueryKey(flowId) });
+            qc.invalidateQueries({ queryKey: getReminderFlowsControllerFindEdgesQueryKey(flowId) });
+            setSelectedNodeData((prev) => (prev?.id === nodeId ? null : prev));
+          },
+        },
+      );
+    },
+    [flowId, removeNode, qc],
+  );
+
+  const deleteEdge = useCallback(
+    (edgeId: string) => {
+      removeEdge.mutate(
+        { edgeId },
+        {
+          onSuccess: () =>
+            qc.invalidateQueries({ queryKey: getReminderFlowsControllerFindEdgesQueryKey(flowId) }),
+        },
+      );
+    },
+    [flowId, removeEdge, qc],
+  );
+
   return {
     nodes,
     edges,
@@ -194,5 +237,7 @@ export function useFlowEditor(flowId: string) {
     closePanel,
     addNode,
     updateNodeSettings,
+    deleteNode,
+    deleteEdge,
   };
 }

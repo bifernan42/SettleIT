@@ -74,4 +74,26 @@ TypeScript will immediately surface any component that relied on a type that cha
 
 ## Current state
 
-The frontend is **scaffolded but has no UI yet.** `App.tsx` is a placeholder. The next step is to build screens using the generated hooks. See the root `AGENTS.md` for the full advancement table.
+The flow editor is **production-ready**. All major UX gaps from the first agent have been addressed.
+
+### Flow editor — what was added (2026-05-31)
+
+**Files modified:**
+- `src/pages/flows/hooks/useFlowEditor.ts` — added `FlowEditorContext` (React context carrying `deleteNode` + `deleteEdge`); added `deleteNode()` and `deleteEdge()` mutations; `onConnect` now reads `connection.sourceHandle` to set `TRUE_BRANCH`/`FALSE_BRANCH` on edges from CONDITION nodes; `toRFEdge` sets `sourceHandle` and `type: 'conditionEdge'` so edges restore correctly on reload.
+- `src/pages/flows/nodes/DomainNode.tsx` — full rewrite: emoji + human-readable label per node type and sub-type (e.g. "📧 Envoi Email", "⏳ Attendre 7 jours"); hover delete button (`×`); no incoming handle on TRIGGER, no outgoing handle on END; CONDITION nodes have two colored source handles with labels (✓ Oui green / ✗ Non red).
+- `src/pages/flows/panels/NodeSettingsPanel.tsx` — full rewrite: type-specific React forms (no more raw JSON textarea); TRIGGER/END show informational panels; DELAY has a number input; ACTION has canal selector + message textarea; CONDITION has category + contextual field/check selector; delete button in panel footer.
+- `src/pages/flows/panels/AddNodeToolbar.tsx` — emoji labels + tooltip titles per node type.
+- `src/pages/flows/nodes/nodeTypes.ts` — exports `edgeTypes` (new) alongside `nodeTypes`.
+- `src/pages/flows/FlowEditorPage.tsx` — wraps canvas in `FlowEditorContext.Provider`; passes `edgeTypes` to `<ReactFlow>`; passes `deleteNode` to `NodeSettingsPanel`.
+
+**New file:**
+- `src/pages/flows/edges/ConditionEdge.tsx` — custom React Flow edge; colored stroke (green/red/gray) per `conditionType`; label chip (✓ Oui / ✗ Non); inline delete button.
+
+**Settings schema per node type:**
+| Type | Settings |
+|------|----------|
+| TRIGGER | `{}` |
+| END | `{}` |
+| DELAY | `{ delayDays: number }` |
+| ACTION | `{ actionType: 'EMAIL'\|'SMS'\|'WHATSAPP'\|'COURRIER', messageContent: string }` |
+| CONDITION | `{ conditionCategory: 'DATA_AVAILABLE'\|'ACTION_RESULT', field?: string, check?: string }` |

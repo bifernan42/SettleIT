@@ -1,8 +1,8 @@
 import { useParams } from 'react-router-dom';
 import { ReactFlow, Background, Controls, MiniMap, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { nodeTypes } from './nodes/nodeTypes';
-import { useFlowEditor } from './hooks/useFlowEditor';
+import { nodeTypes, edgeTypes } from './nodes/nodeTypes';
+import { useFlowEditor, FlowEditorContext } from './hooks/useFlowEditor';
 import AddNodeToolbar from './panels/AddNodeToolbar';
 import NodeSettingsPanel from './panels/NodeSettingsPanel';
 
@@ -18,32 +18,38 @@ function FlowCanvas({ flowId }: { flowId: string }) {
     closePanel,
     addNode,
     updateNodeSettings,
+    deleteNode,
+    deleteEdge,
   } = useFlowEditor(flowId);
 
   return (
-    <div className="relative w-full h-full">
-      <AddNodeToolbar onAdd={addNode} />
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        fitView
-        deleteKeyCode="Delete"
-      >
-        <Background />
-        <Controls />
-        <MiniMap />
-      </ReactFlow>
-      <NodeSettingsPanel
-        node={selectedNodeData}
-        onClose={closePanel}
-        onSave={updateNodeSettings}
-      />
-    </div>
+    <FlowEditorContext.Provider value={{ deleteNode, deleteEdge }}>
+      <div className="relative w-full h-full">
+        <AddNodeToolbar onAdd={addNode} />
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          fitView
+          deleteKeyCode="Delete"
+        >
+          <Background />
+          <Controls />
+          <MiniMap />
+        </ReactFlow>
+        <NodeSettingsPanel
+          node={selectedNodeData}
+          onClose={closePanel}
+          onSave={updateNodeSettings}
+          onDelete={deleteNode}
+        />
+      </div>
+    </FlowEditorContext.Provider>
   );
 }
 
