@@ -112,6 +112,16 @@ model FlowEdge {
   @@index([targetNodeId])
 }
 
+// ─── Policy ───────────────────────────────────────────────────────────────────
+
+// Singleton (id is always "singleton") holding the configurable business rules
+// that bound reminder behaviour. Read/written via upsert on the fixed id.
+model ReminderPolicy {
+  id              String @id @default("singleton")
+  minDelayDays    Int    @default(7)   // floor for any DELAY node; also the re-contact cooldown
+  maxVisitAgeDays Int    @default(730) // a visit older than this makes the patient ineligible for relance
+}
+
 // ─── Payment ──────────────────────────────────────────────────────────────────
 
 model PaymentRequest {

@@ -74,6 +74,21 @@ export default function HomePage() {
   const failedCount = relancesArr.filter((r) => r.status === 'DELIVERY_FAILED').length;
   const activeFlow = flowsArr.find((f) => f.isActive);
 
+  const outOfPocket = (r: any) => {
+    const pe = r.patientExamination;
+    if (!pe?.examination || !pe?.patient) return 0;
+    return pe.examination.baseCost * (1 - pe.patient.coverageRate);
+  };
+  const euros = (n: number) =>
+    n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+
+  const eurosDue = relancesArr
+    .filter((r) => r.status === 'PENDING')
+    .reduce((sum, r) => sum + outOfPocket(r), 0);
+  const eurosRecovered = relancesArr
+    .filter((r) => r.status === 'FULFILLED')
+    .reduce((sum, r) => sum + outOfPocket(r), 0);
+
   return (
     <div className="max-w-4xl mx-auto space-y-10">
       {/* Header */}
@@ -117,6 +132,41 @@ export default function HomePage() {
           </button>
         </div>
       )}
+
+      {/* Montants */}
+      <section>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+          Reste à charge
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Montant en attente de règlement
+                </p>
+                <p className="mt-1 text-3xl font-bold text-amber-700">
+                  {euros(eurosDue)}
+                </p>
+              </div>
+              <span className="text-3xl">⏳</span>
+            </div>
+          </div>
+          <div className="rounded-xl border-2 border-green-200 bg-green-50/50 p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Montant déjà recouvré
+                </p>
+                <p className="mt-1 text-3xl font-bold text-green-700">
+                  {euros(eurosRecovered)}
+                </p>
+              </div>
+              <span className="text-3xl">💰</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Stats */}
       <section>

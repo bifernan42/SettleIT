@@ -251,3 +251,21 @@ npm run test
 - When passing `Json` fields (e.g. `FlowNode.settings`) to Prisma, cast via `as unknown as Prisma.FlowNodeUpdateInput` or `as Prisma.InputJsonValue` — `Record<string, unknown>` is not directly assignable to Prisma's Json types.
 - Services never catch Prisma errors — the global `PrismaExceptionFilter` handles them.
 - Swagger `@ApiOperation` descriptions must be accurate. Do not describe behaviour that is not yet implemented.
+
+---
+
+## Business rules (added 2026-05-31)
+
+Configurable reminder rules live in a **`ReminderPolicy` singleton** (`id = "singleton"`, columns `minDelayDays` default 7, `maxVisitAgeDays` default 730). Read/written via upsert on the fixed id. Seeded by `getPolicy()` on first read.
+
+- **`settings` module** — `GET /settings/policy` (upserts defaults if missing) and `PATCH /settings/policy`. Bounds enforced by `UpdatePolicyDto` via `class-validator` (`minDelayDays` 1–30, `maxVisitAgeDays` 30–1825). `SettingsModule` exports `SettingsService` for reuse.
+- **DELAY-node floor** — `ReminderFlowsService` injects `SettingsService` and rejects (`400`) any DELAY node whose `settings.delayDays < minDelayDays`, on both create and update. Non-DELAY nodes are untouched.
+- **`campaigns` module** — `GET /campaigns/eligibility` (read-only) returns every patient with ≥1 visit, marking `eligible` + `reason`: excluded if the most recent visit is older than `maxVisitAgeDays` (`"Visite trop ancienne"`) or a PaymentRequest exists within `minDelayDays` (`"Contacté récemment"`). Also returns `outOfPocketDue` (sum of `baseCost * (1 - coverageRate)`). No PaymentRequests are created — the campaign launch stays a client-side toast.
+
+### ⚠️ Global ValidationPipe — no `whitelist`
+
+`main.ts` registers `new ValidationPipe({ transform: true })` **without** `whitelist`. Existing DTOs document fields with `@ApiProperty` only (no `class-validator` decorators); `whitelist: true` would strip every such field and break all create/update endpoints (500s). Validation still runs on DTOs that carry `class-validator` decorators (e.g. `UpdatePolicyDto`). If you add `whitelist` later, you must first decorate **all** DTO fields.
+
+### Seed
+
+`createBulkDemoData()` in `scenario-fixtures.ts` adds ~18 `seed-bulk-*` patients, 7 examination tiers, visits spread across ~2.5 years (patients 0–2 intentionally older than 730 days → excluded), and reminders across all statuses (patients 3–4 within the cooldown). Deterministic + idempotent like the rest of the seed. Run `npm run prisma:push` after pulling (new `ReminderPolicy` table).

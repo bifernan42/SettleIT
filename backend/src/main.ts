@@ -1,3 +1,4 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -7,6 +8,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({ origin: ['http://localhost:5173', 'http://localhost:4173'] });
   app.useGlobalFilters(new PrismaExceptionFilter());
+  // Note: no `whitelist` — existing DTOs document fields with @ApiProperty only
+  // (no class-validator decorators), and whitelist would strip them. Validation
+  // still runs on DTOs that DO carry class-validator decorators (e.g. policy bounds).
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const config = new DocumentBuilder()
     .setTitle('SettleIT API')

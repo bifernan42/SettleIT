@@ -27,4 +27,5 @@ export * from './updateFlowNodeDtoSettings';
 export * from './updateFlowNodeDtoType';
 export * from './updatePatientDto';
 export * from './updatePatientExaminationDto';
+export * from './updatePolicyDto';
 export * from './updateReminderFlowDto';

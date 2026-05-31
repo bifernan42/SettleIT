@@ -8,6 +8,7 @@ const mainNav = [
   { to: '/patients', label: 'Patients', emoji: '👥' },
   { to: '/relances', label: 'Relances', emoji: '💳' },
   { to: '/campagne', label: 'Campagne', emoji: '📤' },
+  { to: '/analytics', label: 'Analytics', emoji: '📊' },
 ];
 
 const bottomNav = [

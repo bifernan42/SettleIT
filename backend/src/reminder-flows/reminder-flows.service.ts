@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { FlowNodeType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { CreateReminderFlowDto } from './dto/create-reminder-flow.dto';
 import { UpdateReminderFlowDto } from './dto/update-reminder-flow.dto';
 import { CreateFlowNodeDto } from './dto/create-flow-node.dto';
@@ -10,7 +11,23 @@ import { UpdateFlowEdgeDto } from './dto/update-flow-edge.dto';
 
 @Injectable()
 export class ReminderFlowsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private settings: SettingsService,
+  ) {}
+
+  // A DELAY node must respect the policy floor — otherwise a flow could wait
+  // less than the minimum allowed gap between two reminder actions.
+  private async assertDelayWithinPolicy(settings: Record<string, unknown>) {
+    const delayDays = settings?.delayDays;
+    if (typeof delayDays !== 'number') return;
+    const { minDelayDays } = await this.settings.getPolicy();
+    if (delayDays < minDelayDays) {
+      throw new BadRequestException(
+        `Le délai d'un nœud DELAY doit être d'au moins ${minDelayDays} jours (reçu : ${delayDays}).`,
+      );
+    }
+  }
 
   // ─── Flows ───────────────────────────────────────────────────────────────
 
@@ -39,7 +56,10 @@ export class ReminderFlowsService {
 
   // ─── Nodes ───────────────────────────────────────────────────────────────
 
-  createNode(flowId: string, dto: CreateFlowNodeDto) {
+  async createNode(flowId: string, dto: CreateFlowNodeDto) {
+    if (dto.type === FlowNodeType.DELAY) {
+      await this.assertDelayWithinPolicy(dto.settings);
+    }
     return this.prisma.flowNode.create({
       data: { ...dto, flowId, settings: dto.settings as Prisma.InputJsonValue },
     });
@@ -49,7 +69,16 @@ export class ReminderFlowsService {
     return this.prisma.flowNode.findMany({ where: { flowId } });
   }
 
-  updateNode(nodeId: string, dto: UpdateFlowNodeDto) {
+  async updateNode(nodeId: string, dto: UpdateFlowNodeDto) {
+    if (dto.settings) {
+      const node = await this.prisma.flowNode.findUniqueOrThrow({
+        where: { id: nodeId },
+      });
+      const type = dto.type ?? node.type;
+      if (type === FlowNodeType.DELAY) {
+        await this.assertDelayWithinPolicy(dto.settings);
+      }
+    }
     return this.prisma.flowNode.update({
       where: { id: nodeId },
       data: dto as unknown as Prisma.FlowNodeUpdateInput,

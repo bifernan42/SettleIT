@@ -13,6 +13,7 @@ import {
 } from '@/api/generated/examinations/examinations';
 import ExaminationForm from '../examinations/ExaminationForm';
 import { buildColumns, type ExaminationRow } from '../examinations/columns';
+import PolicyRules from './PolicyRules';
 
 export default function ReglagesPage() {
   const qc = useQueryClient();
@@ -55,6 +56,8 @@ export default function ReglagesPage() {
           Configuration générale de l'application.
         </p>
       </div>
+
+      <PolicyRules />
 
       {/* Section examens */}
       <section className="rounded-xl border bg-white shadow-sm overflow-hidden">

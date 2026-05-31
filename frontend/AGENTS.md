@@ -123,3 +123,17 @@ The flow editor is **production-ready**. All major UX gaps from the first agent 
 | DELAY | `{ delayDays: number }` |
 | ACTION | `{ actionType: 'EMAIL'\|'SMS'\|'WHATSAPP'\|'COURRIER', messageContent: string }` |
 | CONDITION | `{ conditionCategory: 'DATA_AVAILABLE'\|'ACTION_RESULT', field?: string, check?: string }` |
+
+---
+
+### Business rules, eligibility & analytics (2026-05-31)
+
+**New page — `src/pages/analytics/AnalyticsPage.tsx`** (route `/analytics`, nav entry 📊 Analytics in `AppShell.tsx`). Uses **Recharts** (installed): donut of relances par statut, bar chart € dus vs recouvrés, bar chart visites par mois (12 derniers mois). Colors from `--chart-1..--chart-5` CSS tokens.
+
+**Settings — `src/pages/settings/PolicyRules.tsx`** (rendered atop `ReglagesPage`): two range sliders bound to `GET/PATCH /settings/policy` — "Délai minimum entre deux relances" (1–30 j) and "Âge maximum d'une visite relançable" (1–5 ans, stored as days ×365). Auto-saves on slider release (`onValueCommit`), no save button. New `src/components/ui/slider.tsx` is a styled native `<input type="range">` (controlled, `onValueChange`/`onValueCommit`).
+
+**Home — `src/pages/home/HomePage.tsx`** gained a "Reste à charge" section: € en attente (sum of PENDING `baseCost*(1-coverageRate)`) and € recouvré (sum of FULFILLED), formatted via `toLocaleString('fr-FR', {style:'currency',currency:'EUR'})`.
+
+**Campagne — `src/pages/campagne/CampagnePage.tsx`** now consumes `GET /campaigns/eligibility` instead of the raw patients list: only eligible patients are selectable (each shows its € due), and a read-only "Patients non contactables" section lists excluded patients with their reason (🚫 Visite trop ancienne / Contacté récemment). Launch is still a `sonner` toast.
+
+Run `npm run api:generate` (backend up) after pulling — adds `useSettingsController*` and `useCampaignsControllerEligibility` hooks.

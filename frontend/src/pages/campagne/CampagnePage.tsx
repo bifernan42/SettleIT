@@ -2,20 +2,31 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/layout/PageHeader';
-import { usePatientsControllerFindAll } from '@/api/generated/patients/patients';
+import { useCampaignsControllerEligibility } from '@/api/generated/campaigns/campaigns';
 import { useReminderFlowsControllerFindAll } from '@/api/generated/reminder-flows/reminder-flows';
 
-type Patient = { id: string; name: string; surname: string; email: string; phoneNumber: string };
+type Eligibility = {
+  patientId: string;
+  name: string;
+  surname: string;
+  email: string;
+  phoneNumber: string;
+  eligible: boolean;
+  reason?: string;
+  outOfPocketDue: number;
+};
 type Flow = { id: string; name: string; isActive: boolean };
 
 const selectClass =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring';
 
 export default function CampagnePage() {
-  const { data: patientsData } = usePatientsControllerFindAll();
+  const { data: eligibilityData } = useCampaignsControllerEligibility();
   const { data: flowsData } = useReminderFlowsControllerFindAll();
 
-  const patients = (patientsData as Patient[] | undefined) ?? [];
+  const allPatients = (eligibilityData as Eligibility[] | undefined) ?? [];
+  const patients = allPatients.filter((p) => p.eligible);
+  const excluded = allPatients.filter((p) => !p.eligible);
   const flows = (flowsData as Flow[] | undefined) ?? [];
 
   const [selectedFlowId, setSelectedFlowId] = useState('');
@@ -39,7 +50,7 @@ export default function CampagnePage() {
     if (selectedPatients.size === patients.length) {
       setSelectedPatients(new Set());
     } else {
-      setSelectedPatients(new Set(patients.map((p) => p.id)));
+      setSelectedPatients(new Set(patients.map((p) => p.patientId)));
     }
   };
 
@@ -107,14 +118,16 @@ export default function CampagnePage() {
           </div>
 
           {patients.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucun patient enregistré.</p>
+            <p className="text-sm text-muted-foreground">
+              Aucun patient éligible à la relance pour le moment.
+            </p>
           ) : (
             <div className="divide-y rounded-lg border overflow-hidden">
               {patients.map((p) => {
-                const checked = selectedPatients.has(p.id);
+                const checked = selectedPatients.has(p.patientId);
                 return (
                   <label
-                    key={p.id}
+                    key={p.patientId}
                     className={`flex items-center gap-4 px-4 py-3 cursor-pointer transition-colors ${
                       checked ? 'bg-primary/5' : 'bg-white hover:bg-gray-50'
                     }`}
@@ -123,7 +136,7 @@ export default function CampagnePage() {
                       type="checkbox"
                       className="w-4 h-4 rounded accent-primary"
                       checked={checked}
-                      onChange={() => togglePatient(p.id)}
+                      onChange={() => togglePatient(p.patientId)}
                     />
                     <div className="flex-1">
                       <p className="text-sm font-semibold">
@@ -133,6 +146,12 @@ export default function CampagnePage() {
                         {p.email || "Pas d'email"} · {p.phoneNumber || "Pas de téléphone"}
                       </p>
                     </div>
+                    <span className="text-xs font-medium text-amber-700">
+                      {p.outOfPocketDue.toLocaleString('fr-FR', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      })}
+                    </span>
                     {checked && (
                       <span className="text-xs text-primary font-medium">Sélectionné ✓</span>
                     )}
@@ -146,6 +165,29 @@ export default function CampagnePage() {
             <p className="mt-3 text-sm text-muted-foreground">
               {selectedPatients.size} patient(s) sélectionné(s)
             </p>
+          )}
+
+          {excluded.length > 0 && (
+            <div className="mt-5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Patients non contactables ({excluded.length})
+              </p>
+              <div className="divide-y rounded-lg border overflow-hidden opacity-70">
+                {excluded.map((p) => (
+                  <div
+                    key={p.patientId}
+                    className="flex items-center gap-4 px-4 py-2.5 bg-gray-50/60"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">
+                        {p.surname} {p.name}
+                      </p>
+                    </div>
+                    <span className="text-xs font-medium text-red-600">🚫 {p.reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </section>
 

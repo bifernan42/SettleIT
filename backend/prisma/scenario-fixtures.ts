@@ -333,6 +333,102 @@ export async function createSmsOnlyFlow(prisma: PrismaClient) {
   });
 }
 
+// ─── Bulk demo dataset ────────────────────────────────────────────────────────
+
+// Reference "today" used to spread visit/reminder dates around. Kept in sync
+// with the demo clock (late May 2026) so eligibility rules produce a realistic
+// mix: some visits older than 2 years (excluded), some reminders within the
+// cooldown window (excluded), and many eligible patients.
+const REFERENCE = new Date('2026-05-31T12:00:00.000Z');
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function daysAgo(days: number) {
+  return new Date(REFERENCE.getTime() - days * DAY_MS);
+}
+
+const BULK_EXAM_COSTS = [80, 150, 220, 350, 480, 620, 950];
+
+/**
+ * A large, deterministic demo dataset: varied patients, several examination
+ * types, visits spread across ~2.5 years (some intentionally older than the
+ * 730-day eligibility ceiling), and payment requests across all three statuses
+ * (including a few recent enough to trip the re-contact cooldown).
+ *
+ * Everything is upserted on stable `seed-bulk-*` ids so re-running the seed is
+ * idempotent.
+ */
+export async function createBulkDemoData(prisma: PrismaClient) {
+  const exams: Examination[] = [];
+  for (let i = 0; i < BULK_EXAM_COSTS.length; i++) {
+    const id = `seed-bulk-examination-${i}`;
+    const data = { id, baseCost: BULK_EXAM_COSTS[i] };
+    exams.push(
+      await prisma.examination.upsert({
+        where: { id },
+        update: data,
+        create: data,
+      }),
+    );
+  }
+
+  const PATIENT_COUNT = 18;
+  const statuses = [
+    PaymentRequestStatus.PENDING,
+    PaymentRequestStatus.FULFILLED,
+    PaymentRequestStatus.DELIVERY_FAILED,
+  ];
+
+  for (let i = 0; i < PATIENT_COUNT; i++) {
+    const patientId = `seed-bulk-patient-${i}`;
+    const coverageRate = [0.5, 0.6, 0.65, 0.7, 0.8, 0.9][i % 6];
+    const patientPayload = patientData({ id: patientId, coverageRate });
+    const patient = await prisma.patient.upsert({
+      where: { id: patientId },
+      update: patientPayload,
+      create: patientPayload,
+    });
+
+    // Visit age: patients 0-2 are >2 years old (excluded by age), the rest
+    // spread from a few days to ~18 months ago.
+    const visitAgeDays = i < 3 ? 760 + i * 40 : ((i * 37) % 540) + 5;
+    const exam = exams[i % exams.length];
+    const peId = `seed-bulk-pe-${i}`;
+    const patientExamination = await upsertPatientExamination(
+      prisma,
+      peId,
+      patient,
+      exam,
+      daysAgo(visitAgeDays),
+    );
+
+    // Every other patient has a reminder on record. Patients 3 and 4 were
+    // contacted within the last few days → excluded by the cooldown rule.
+    if (i % 2 === 0 || i === 3 || i === 4) {
+      const reminderAgeDays = i === 3 ? 2 : i === 4 ? 5 : ((i * 53) % 400) + 10;
+      const status = statuses[i % statuses.length];
+      const prId = `seed-bulk-pr-${i}`;
+      const channelNode =
+        i % 2 === 0 ? ids.nodes.emailAction : ids.nodes.smsAction;
+      await prisma.paymentRequest.upsert({
+        where: { id: prId },
+        update: {
+          patientExaminationId: patientExamination.id,
+          flowNodeId: channelNode,
+          date: daysAgo(reminderAgeDays),
+          status,
+        },
+        create: {
+          id: prId,
+          patientExaminationId: patientExamination.id,
+          flowNodeId: channelNode,
+          date: daysAgo(reminderAgeDays),
+          status,
+        },
+      });
+    }
+  }
+}
+
 async function upsertPatientExamination(
   prisma: PrismaClient,
   id: string,

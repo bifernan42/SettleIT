@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import {
+  createBulkDemoData,
   createDeliveryFailedReminderScenario,
   createEmailToSmsFallbackFlow,
   createExpensiveExamination,
@@ -31,6 +32,10 @@ async function main() {
   await createReminderSentAwaitingPaymentScenario(prisma, patientNoEmail, examExpensive);
   // Scenario C: SMS fallback could not reach patient → DELIVERY_FAILED
   await createDeliveryFailedReminderScenario(prisma, patientNoPhone, examExpensive);
+
+  // Large demo dataset (patients, examinations, visits, reminders) so the
+  // dashboard, analytics and campaign eligibility have realistic volume.
+  await createBulkDemoData(prisma);
 }
 
 main()

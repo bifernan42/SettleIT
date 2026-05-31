@@ -5,6 +5,7 @@ import PatientsPage from './pages/patients/PatientsPage';
 import PatientExaminationsPage from './pages/patient-examinations/PatientExaminationsPage';
 import PaymentRequestsPage from './pages/payment-requests/PaymentRequestsPage';
 import CampagnePage from './pages/campagne/CampagnePage';
+import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import ReglagesPage from './pages/settings/ReglagesPage';
 import FlowEditorPage from './pages/flows/FlowEditorPage';
 import FlowsPage from './pages/flows/FlowsPage';
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="visites" element={<PatientExaminationsPage />} />
         <Route path="relances" element={<PaymentRequestsPage />} />
         <Route path="campagne" element={<CampagnePage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="reglages" element={<ReglagesPage />} />
         <Route path="flows" element={<FlowsPage />} />
         <Route path="flows/:flowId" element={<FlowEditorPage />} />
