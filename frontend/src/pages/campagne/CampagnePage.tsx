@@ -69,7 +69,7 @@ export default function CampagnePage() {
     <>
       <PageHeader title="📤 Lancer une campagne de relance" />
 
-      <div className="max-w-3xl space-y-8">
+      <div className="max-w-3xl mx-auto space-y-8">
         {/* Étape 1 — Workflow */}
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">

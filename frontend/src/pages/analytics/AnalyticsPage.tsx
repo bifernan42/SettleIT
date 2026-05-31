@@ -174,7 +174,7 @@ export default function AnalyticsPage() {
   }));
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">📊 Analytics</h1>
         <p className="text-muted-foreground mt-1">
