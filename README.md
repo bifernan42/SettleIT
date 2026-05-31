@@ -2,49 +2,51 @@
 
 # SettleIT
 
-SettleIT est une web-app pensée pour les professionnels de santé qui veulent mieux piloter leurs relances de reste à charge patient.
+Il s'agit de mon interprétation d'un des sujets proposés par la startup RainPath, une startup MedTech, dans le cadre de leur processus de recrutement.
 
-L'idée est simple : après une visite ou un examen, un patient peut encore devoir régler une partie du montant. Plutôt que de gérer ces relances à la main, SettleIT permet de construire des workflows visuels, de suivre les relances en cours, et de garder une lecture claire des montants dus ou déjà recouvrés.
+**SettleIT** est une web-app permettant aux professionnels de santé d'éditer facilement des workflows visuels de relance, afin de recouvrer d'éventuels restes à charge patients, ou *out-of-pocket costs* en anglais.
 
-SettleIT ne traite pas les paiements.  
-Il ne s'agit pas d'un système de paiement, mais d'un outil d'orchestration, de suivi et de pilotage des relances.
+L'objectif est donc, pour une base de patients donnée, de réduire l'encours total, c'est-à-dire la somme de tous les restes à charge impayés, via l'édition de schémas visuels de relance par différents canaux : email, SMS, courrier, etc.
 
-## Ce que permet l'application
+SettleIT ne traite pas les paiements. L'application ne sert pas à encaisser directement de l'argent, mais à structurer, automatiser et suivre les relances qui peuvent mener au paiement.
 
-SettleIT permet notamment de :
-
-- gérer une base de patients ;
-- enregistrer des visites ou examens ;
-- calculer le reste à charge patient ;
-- créer des workflows visuels de relance ;
-- adapter les relances selon les données disponibles côté patient ;
-- suivre les relances en attente, réglées ou en échec d'envoi ;
-- visualiser les indicateurs clés : montant dû, montant recouvré, taux de règlement, efficacité par canal ;
-- configurer quelques règles métier simples, comme le délai minimal entre deux relances.
-
-L'objectif produit est de réduire l'encours total, c'est-à-dire la somme des restes à charge non réglés, tout en donnant aux équipes un processus clair, réplicable et facile à ajuster.
-
-## Approche produit
-
-Le coeur de SettleIT repose sur un éditeur de workflows visuels.
-
-Un établissement peut définir sa stratégie de relance à la manière d'un outil comme n8n ou Zapier : un point de départ, des actions d'envoi, des délais, des conditions, puis des chemins de fallback.
-
-Par exemple :
-
-- envoyer un email quelques jours après l'examen ;
-- si l'email est absent ou non exploitable, passer par SMS ;
-- attendre avant une nouvelle relance ;
-- terminer le workflow lorsque la situation est réglée ou qu'aucune action pertinente ne reste à faire.
-
-Cette logique permet de gérer un problème très concret : les données patient ne sont pas toujours complètes. Certains patients n'ont pas d'email, d'autres pas de numéro de téléphone fiable. Le workflow permet donc d'anticiper ces cas au lieu de les traiter manuellement au fil de l'eau.
+L'éditeur de workflows de relance permet aussi de gérer l'absence de données côté patient en définissant des noeuds de condition et des fallbacks. Par exemple, si un patient n'a pas d'email renseigné, le workflow peut prévoir une relance par SMS, ou arrêter la branche concernée si aucune donnée exploitable n'est disponible.
 
 <details>
-<summary>Voir un exemple de workflow</summary>
+<summary>Voir une illustration de workflow</summary>
 
 <img src="assets/flow_de_relance.png" alt="Workflow de relance" width="560">
 
 </details>
+
+## Pourquoi ce produit ?
+
+Côté métier, pour des gestionnaires d'établissement de santé, les gains sont multiples. En voici une liste non exhaustive :
+
+- **Clarté et processus de relance unifié :** l'édition de workflows permet d'avoir un process de relance clair, réplicable, et adaptatif selon les données patients disponibles.
+- **Gain de temps :** les relances ne se font plus manuellement. Cela libère du temps aux équipes, qui peuvent adresser la variabilité des données patient via des noeuds de condition.
+- **Optimisation des stratégies de relance :** éditer différents workflows et les mettre en production permettrait de tester différentes stratégies de relance, puis de comparer leur efficacité.
+- **Visualisation instantanée des chiffres qui comptent :** encours total, montant recouvré, patients contactés, taux de succès des workflows, etc.
+
+Si cela vous intéresse, je détaille ci-dessous mon approche pour ce projet.
+
+## A) Les recherches
+
+L'objectif de cette première étape était de gagner en contexte, en particulier sur les réglementations en vigueur concernant les relances dans le médical. Cela permet de tirer quelques règles métier simples et d'avoir un rendu final plus proche de la réalité.
+
+Voici quelques apprentissages simples qui ont guidé mes choix :
+
+- Les professionnels de santé sont en droit de demander au patient le paiement de tout acte médical effectivement réalisé, jusqu'à 2 ans après la réalisation de l'acte médical. On peut en extraire une règle simple : **un workflow en production ne s'appliquera pas aux patients dont la visite remonte à plus de 2 ans, mais on ne se privera pas de relancer un patient venu l'année dernière. On pourra mettre en application un workflow dès la création d'une visite patient en base.**
+- Bien que floue, la législation en vigueur en France concernant les relances pour impayés interdit le harcèlement de la patientèle, sans forcément préciser directement la légalité de l'emploi de canaux multiples ni les délais exacts acceptables entre deux relances. **Pour rester prudent, on fixera donc un délai minimal de 7 jours entre deux relances, même en l'absence de noeud de temporisation explicite.**
+- On peut aussi déceler une règle implicite de "niveaux" d'importance des moyens de communication employés : email < SMS < WhatsApp < courrier. Traduit en feature, cela pourrait donner lieu à des recommandations contextuelles lors de l'édition du graphe. Je précise que je n'ai pas implémenté cette feature complexe : faire un bon moteur de recommandations dynamique est un projet à part entière. On pourrait éventuellement l'imaginer avec un petit modèle spécialisé qui tournerait en parallèle, mais ce n'était pas le coeur du sujet ici.
+
+Cette phase de recherche n'avait pas pour but de construire un produit juridiquement exhaustif. Elle m'a surtout servi à éviter de concevoir une app totalement hors-sol, et à transformer quelques contraintes réelles en règles produit simples.
+
+## B) Stylo et papier : création des entités métier et des relations
+
+Je suis personnellement convaincu que de bonnes entités et de bonnes relations, avec des tradeoffs raisonnables, permettent ensuite d'avancer beaucoup plus vite sur l'implémentation.
+
+Pour moi, cette étape représente facilement 50% du travail.
 
 <details>
 <summary>Voir les schémas papier</summary>
@@ -58,19 +60,53 @@ Ces notes ont servi à poser les premières entités métier et leurs relations 
 
 </details>
 
-## Stack
+Les entités de base sont assez simples :
 
-Le projet est organisé en monorepo avec deux applications :
+- `Patient`
+- `Examination`
+- `PatientExamination`
 
-- un backend NestJS ;
-- un frontend React + TypeScript.
+La relation `PatientExamination` sert de point de départ au workflow de relance.
 
-Les deux parties communiquent via une API REST documentée avec Swagger.  
-Le client frontend est généré depuis cette documentation afin de garder les types alignés avec le backend.
+L'idée métier est simple : une consultation ou un examen génère potentiellement un reste à charge pour le patient. Le job de SettleIT est ensuite de relancer le patient pour récupérer la somme due. Ces relances sont représentées par des `PaymentRequest`.
+
+Pour générer ces `PaymentRequest`, l'application repose sur l'édition de workflows visuels, un peu à la manière d'un outil comme n8n. Un workflow est un graphe composé de noeuds et d'arêtes.
+
+J'ai donc défini :
+
+- `ReminderFlow`, qui permet de retrouver tous les composants d'un flow avec des jointures, et de distinguer les différents workflows.
+- `FlowNode`, qui stocke les noeuds du graphe. Un noeud contient notamment un type, une position pour reconstruire le graphe visuellement, et un champ `settings` en JSON. Le type permet de savoir comment parser les settings, qui varient selon la nature du noeud.
+- `FlowEdge`, qui représente le lien visuel entre deux noeuds. J'ai choisi d'en faire une entité dédiée par souci de propreté et de praticité. Un edge référence le noeud source et le noeud de destination, et possède également un type pour pouvoir afficher du texte ou interpréter le lien selon le contexte.
+- `PaymentRequest`, qui est selon moi la table la plus importante. Elle référence la `PatientExamination`, le `FlowNode` exécuté, la date, et le résultat de la relance.
+
+En résumé, `PaymentRequest` est ce que l'on cherche réellement à générer avec l'éditeur visuel. Le graphe est la configuration, les `PaymentRequest` sont les traces métier concrètes.
+
+## C) Implémentation actuelle
+
+Le projet est organisé en monorepo :
+
+```text
+SettleIT/
+├── backend/
+│   ├── prisma/
+│   ├── src/
+│   └── README.md
+├── frontend/
+│   ├── src/
+│   └── README.md
+├── assets/
+└── README.md
+```
+
+Le backend est une API NestJS avec Prisma. Le frontend est une application React + TypeScript avec React Query. Le client API du frontend est généré depuis la documentation Swagger du backend, ce qui permet de garder les types alignés entre les deux parties.
+
+À ce stade, le backend contient les modules CRUD, le schéma Prisma, les données de seed et la documentation Swagger. Le frontend contient la base technique, le client API généré, et peut être branché progressivement sur les écrans produit.
+
+Les envois réels d'email, SMS, WhatsApp ou courrier ne sont pas branchés. C'est volontaire : SettleIT est ici concentré sur la modélisation, l'orchestration, la visualisation et le suivi des relances, pas sur l'intégration de prestataires d'envoi.
 
 ## Lancer le projet
 
-### 1. Backend
+### Backend
 
 ```bash
 cd backend
@@ -92,7 +128,7 @@ La documentation Swagger est disponible ici :
 http://localhost:3000/api
 ```
 
-### 2. Frontend
+### Frontend
 
 Dans un second terminal :
 
@@ -121,28 +157,7 @@ npm run api:generate
 
 Cette commande lit la documentation Swagger exposée par le backend et régénère les types TypeScript ainsi que les hooks React Query.
 
-## Structure du repository
-
-```text
-SettleIT/
-├── backend/
-│   ├── prisma/
-│   ├── src/
-│   └── README.md
-├── frontend/
-│   ├── src/
-│   └── README.md
-├── assets/
-└── README.md
-```
-
 ## Documentation par partie
 
 - [README Backend](backend/README.md)
 - [README Frontend](frontend/README.md)
-
-## Notes
-
-Le projet reste volontairement concentré sur la configuration, la visualisation et le suivi des relances.
-
-Les envois réels d'email, SMS, WhatsApp ou courrier ne sont pas branchés. Les campagnes sont simulées, ce qui permet de se concentrer sur le produit, les règles métier et l'expérience utilisateur.
