@@ -110,17 +110,21 @@ export function useFlowEditor(flowId: string) {
     (changes) => {
       setNodes((nds) => applyNodeChanges(changes, nds) as Node<DomainNode>[]);
 
-      // Persist position only on drag end — avoids N calls per pixel
       for (const change of changes) {
+        // Persist position only on drag end — avoids N calls per pixel
         if (change.type === 'position' && change.dragging === false && change.position) {
           patchNode.mutate({
             nodeId: change.id,
             data: { positionX: change.position.x, positionY: change.position.y } as any,
           });
         }
+        // Sync Delete-key removal to backend
+        if (change.type === 'remove') {
+          removeNode.mutate({ nodeId: change.id });
+        }
       }
     },
-    [patchNode],
+    [patchNode, removeNode],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(
@@ -198,13 +202,19 @@ export function useFlowEditor(flowId: string) {
 
   const deleteNode = useCallback(
     (nodeId: string) => {
+      // Optimistic: remove immediately so UI responds without waiting for refetch
+      setNodes((prev) => prev.filter((n) => n.id !== nodeId));
+      setSelectedNodeData((prev) => (prev?.id === nodeId ? null : prev));
       removeNode.mutate(
         { nodeId },
         {
           onSuccess: () => {
             qc.invalidateQueries({ queryKey: getReminderFlowsControllerFindNodesQueryKey(flowId) });
             qc.invalidateQueries({ queryKey: getReminderFlowsControllerFindEdgesQueryKey(flowId) });
-            setSelectedNodeData((prev) => (prev?.id === nodeId ? null : prev));
+          },
+          onError: () => {
+            // Revert by re-fetching on failure
+            qc.invalidateQueries({ queryKey: getReminderFlowsControllerFindNodesQueryKey(flowId) });
           },
         },
       );
@@ -214,10 +224,14 @@ export function useFlowEditor(flowId: string) {
 
   const deleteEdge = useCallback(
     (edgeId: string) => {
+      // Optimistic: remove immediately
+      setEdges((prev) => prev.filter((e) => e.id !== edgeId));
       removeEdge.mutate(
         { edgeId },
         {
           onSuccess: () =>
+            qc.invalidateQueries({ queryKey: getReminderFlowsControllerFindEdgesQueryKey(flowId) }),
+          onError: () =>
             qc.invalidateQueries({ queryKey: getReminderFlowsControllerFindEdgesQueryKey(flowId) }),
         },
       );

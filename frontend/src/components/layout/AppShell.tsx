@@ -64,7 +64,7 @@ export default function AppShell() {
         <div className="flex items-center gap-2 px-3 mb-6">
           <Activity size={18} strokeWidth={2} className="text-primary shrink-0" />
           <div>
-            <p className="font-bold text-base tracking-tight text-foreground leading-none">SettleIT</p>
+            <p className="font-bold text-base tracking-tight text-foreground leading-none">SettleIT.</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Relances patients</p>
           </div>
         </div>
